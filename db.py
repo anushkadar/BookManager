@@ -94,10 +94,12 @@ def export_books():
     conn.close()
 
 def get_copy_summary(book_id):
+    print(f"📡 Loading fresh summary for book_id={book_id}")
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
     cur.execute("SELECT available, lent, missing, damaged FROM inventory WHERE book_id = ?", (book_id,))
     row = cur.fetchone()
+    print("📦 DB row:", row)  # 🔍 Add this
     conn.close()
     if row:
         available, lent, missing, damaged = row
@@ -112,16 +114,32 @@ def get_copy_summary(book_id):
         return {"Available": 0, "Lent": 0, "Missing": 0, "Damaged": 0, "total": 0}
 
 def update_inventory(book_id, **kwargs):
-    conn = sqlite3.connect(DB_NAME)
-    cur = conn.cursor()
-    sets = []
-    values = []
-    for field in ["available", "lent", "missing", "damaged"]:
-        if field in kwargs:
-            sets.append(f"{field} = ?")
-            values.append(kwargs[field])
-    if sets:
-        values.append(book_id)
-        cur.execute(f"UPDATE inventory SET {', '.join(sets)} WHERE book_id = ?", values)
-    conn.commit()
-    conn.close()
+        conn = sqlite3.connect(DB_NAME)
+        cur = conn.cursor()
+
+        # 🔍 Check if a row exists
+        cur.execute("SELECT 1 FROM inventory WHERE book_id = ?", (book_id,))
+        exists = cur.fetchone()
+
+        if not exists:
+            # 🧱 Insert a new row with default 0s
+            cur.execute(
+                "INSERT INTO inventory (book_id, available, lent, missing, damaged) VALUES (?, 0, 0, 0, 0)",
+                (book_id,)
+            )
+
+        # 🔧 Now update it
+        sets = []
+        values = []
+        for field in ["available", "lent", "missing", "damaged"]:
+            if field in kwargs:
+                sets.append(f"{field} = ?")
+                values.append(kwargs[field])
+
+        if sets:
+            values.append(book_id)
+            cur.execute(f"UPDATE inventory SET {', '.join(sets)} WHERE book_id = ?", values)
+
+        conn.commit()
+        conn.close()
+

@@ -77,12 +77,11 @@ def main(page: ft.Page):
     def create_delete_callback(book_id):
         return lambda e: handle_delete(book_id)
 
-    def create_summary_callback(book_id):
+    def create_summary_callback(page, book_id):
         def show_summary(e):
-            summary = get_copy_summary(book_id)
-            create_summary_dialog(book_id, summary)
+            summary = get_copy_summary(book_id)  # ✅ always fetch latest
+            create_summary_dialog(page, book_id, summary)  # ✅ pass updated data
         return show_summary
-    
 
     def create_summary_dialog(page, book_id, summary_data):
         available_input = ft.TextField(value=str(summary_data.get("Available", 0)), width=70, text_align=ft.TextAlign.CENTER, dense=True)
@@ -91,19 +90,23 @@ def main(page: ft.Page):
         damaged_input = ft.TextField(value=str(summary_data.get("Damaged", 0)), width=70, text_align=ft.TextAlign.CENTER, dense=True)
 
         def save_inventory(e):
+            print("🚨 save_inventory called")  #
             new_data = {
-                "Available": int(available_input.value or 0),
-                "Lent": int(lent_input.value or 0),
-                "Missing": int(missing_input.value or 0),
-                "Damaged": int(damaged_input.value or 0),
+                "available": int(available_input.value or 0),
+                "lent": int(lent_input.value or 0),
+                "missing": int(missing_input.value or 0),
+                "damaged": int(damaged_input.value or 0),
             }
-            update_inventory(book_id, new_data)
+            update_inventory(book_id, **new_data)  # ✅ FIXED
             page.close(summary_dialog)
-            page.snack_bar = ft.SnackBar(content=ft.Text("Inventory updated"))
-            page.show_snack_bar(page.snack_bar)
+            page.snack_bar = ft.SnackBar(content=ft.Text("Inventory updated successfully!"))
+            page.snack_bar.open = True
+            refresh_books()  # ✅ This will reload and show updated values
+            page.update()
+
 
         def cancel_dialog(e):
-            page.close(summary_dialog)
+            page.close(summary_dialog)  # ✅ Use page.close()
 
         summary_dialog = ft.AlertDialog(
             modal=True,
@@ -122,15 +125,13 @@ def main(page: ft.Page):
                     ], alignment=ft.MainAxisAlignment.END, spacing=10)
                 ]),
                 padding=15,
-                width=600
+                width=600,
+                height=150     # ✅ Limit overall height (adjust as needed)
             )
         )
 
         page.dialog = summary_dialog
-        page.open(summary_dialog)
-
-
-
+        page.open(summary_dialog)  # ✅ Use page.open()
 
     def update_table():
         book_table.rows.clear()
@@ -141,7 +142,7 @@ def main(page: ft.Page):
             book_id = book[0]
             data_cells = [ft.DataCell(ft.Text(str(cell))) for cell in book[0:10]]
             action_buttons = ft.Row([
-                ft.IconButton(icon="info", tooltip="Summary", on_click=create_summary_callback(book_id)),
+                ft.IconButton(icon="info", tooltip="Summary", on_click=create_summary_callback(page, book_id)),
                 ft.IconButton(icon="edit", tooltip="Edit", on_click=create_edit_callback(book)),
                 ft.IconButton(icon="delete", tooltip="Delete", on_click=create_delete_callback(book_id))
             ])
