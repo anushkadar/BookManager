@@ -43,7 +43,6 @@ def create_tables():
     conn.commit()
     conn.close()
 
-
 def insert_book(data):
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
@@ -64,7 +63,6 @@ def find_book_by_title(title):
     result = cur.fetchone()
     conn.close()
     return result
-
 
 def get_books_paginated(page: int, page_size: int = 100):
     offset = (page - 1) * page_size
@@ -90,7 +88,6 @@ def get_books_paginated(page: int, page_size: int = 100):
     conn.close()
     return rows
 
-
 def get_total_books_count():
     conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
@@ -98,7 +95,6 @@ def get_total_books_count():
     total = cur.fetchone()[0]
     conn.close()
     return total
-
 
 def update_book(book_id, data):
     conn = sqlite3.connect(DB_NAME)
@@ -121,7 +117,6 @@ def update_book(book_id, data):
                 ''', values)
     conn.commit()
     conn.close()
-
 
 def delete_book(book_id):
     conn = sqlite3.connect(DB_NAME)
@@ -158,9 +153,6 @@ def search_books(term, exact=False):
     conn.close()
     return results
 
-
-
-
 def export_books():
     import pandas as pd
     conn = sqlite3.connect(DB_NAME)
@@ -171,7 +163,6 @@ def export_books():
                            """, conn)
     df.to_excel("books_export.xlsx", index=False)
     conn.close()
-
 
 def get_copy_summary(book_id):
     conn = sqlite3.connect(DB_NAME)
